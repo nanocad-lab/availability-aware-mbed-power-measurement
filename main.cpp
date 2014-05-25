@@ -17,7 +17,7 @@
 using namespace std;
 
 //The console object is global so that all objects can use its generic serial methods.
-SerialManager console(PTE16, PTE17, 115200, false); //For serial console
+SerialManager console(USBTX, USBRX, 115200, false); //For serial console
 DigitalOut green(LED1);
 DigitalOut red(LED2);
 
@@ -37,6 +37,8 @@ int main() {
     __disable_irq(); //No interrupts during init
     
     //System power state
+	float sample_period = 0.5;
+	float timestamp = 0;
     power_state_t supply_state;
     power_state_t battery_state;
     power_state_t load_state;
@@ -76,8 +78,7 @@ int main() {
 
     __enable_irq(); //enable interrupts after initialization
 
-	console.serial.printf("SUPPLY,,,BATTERY,,,,LOAD,,,\r\n");
-	console.serial.printf("Voltage (V),Current (A),Power (W),Voltage (V),Current (A),Power (W),SOC(\%),Voltage (V),Current (A),Power (W)\r\n");
+	console.serial.printf("Time (s),SUPPLY Voltage (V),SUPPLY Current (A),SUPPLY Power (W),BATTERY Voltage (V),BATTERY Current (A),BATTERY Power (W),LOAD Voltage (V),LOAD Current (A),LOAD Power (W),BATTERY SOC\r\n");
 
     //The Loop
     while(1) {    
@@ -95,12 +96,16 @@ int main() {
         load_state.power = pwr_sens_load.getPowerFloat(true);
         load_state.current = pwr_sens_load.getCurrentFloat(false);
         
-        //Report power state
-        console.serial.printf("%f,%f,%f,", supply_state.voltage, supply_state.current * 1000, supply_state.power * 1000);
-        console.serial.printf("%f,%f,%f,", battery_state.voltage, battery_state.current * 1000, battery_state.power * 1000);
-        console.serial.printf("%f,", battery_soc);
-        console.serial.printf("%f,%f,%f\r\n", load_state.voltage, load_state.current * 1000, load_state.power * 1000);
+        //Report measurements
+		console.serial.printf("%f,", timestamp);
+        console.serial.printf("%f,%f,%f,", supply_state.voltage, supply_state.current, supply_state.power);
+        console.serial.printf("%f,%f,%f,", battery_state.voltage, battery_state.current, battery_state.power);
+        console.serial.printf("%f,%f,%f,", load_state.voltage, load_state.current, load_state.power);
+        console.serial.printf("%f\r\n", battery_soc);
         
-        wait(0.5);
+        wait(sample_period); //Sleep
+		
+		//Time update
+		timestamp += sample_period;
     }
 }
