@@ -29,8 +29,9 @@ typedef struct {
 } power_state_t;
 
 int main() {
-    //Turn on red and green LEDs during init
-    green = 0;
+    green = 0; //Indicate power available
+
+    //Turn on red LEDs during init
     red = 0;  
     
     __disable_irq(); //No interrupts during init
@@ -70,8 +71,7 @@ int main() {
     pwr_sens_load.selfInit();
 	fuel_gauge.selfInit();
  
-    //Turn off red and green LED when finished init
-    green = 1;
+    //Turn off red LED when finished init
     red = 1;
 
     __enable_irq(); //enable interrupts after initialization
